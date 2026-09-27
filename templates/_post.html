@@ -1,0 +1,64 @@
+{# Tarjeta de post/beta reutilizable #}
+<article class="glass-card post-card fade-in" data-post="{{ item.post['id'] }}">
+  <div class="post-head">
+    <a href="{{ url_for('perfil', username=item.author['username']) }}">
+      <img class="avatar av-md" src="{{ item.author['avatar'] }}" alt="{{ item.author['username'] }}" loading="lazy">
+    </a>
+    <div class="who">
+      <a href="{{ url_for('perfil', username=item.author['username']) }}" style="font-weight:800;font-size:.9rem;">
+        {{ item.author['full_name'] or item.author['username'] }}
+      </a>
+      <div class="text-tiny">@{{ item.author['username'] }} · {{ item.post['created_at']|timeago }}{% if item.post['type'] == 'BETA' %} · 🎮 beta{% endif %}</div>
+    </div>
+    {% if item.beta %}
+    <span class="badge badge-wine">{{ STATUSES.get(item.beta['beta_status'], item.beta['beta_status']) }}</span>
+    {% endif %}
+  </div>
+
+  {% if item.post['content'] %}<p style="white-space:pre-wrap;">{{ item.post['content'] }}</p>{% endif %}
+
+  {% if item.beta %}
+    <a href="{{ url_for('beta_detail', beta_id=item.beta['id']) }}" class="card-themed" style="display:block;border-radius:.6rem;overflow:hidden;margin-top:.65rem;border:1px solid var(--border);">
+      <div class="beta-cover-wrap" style="border-bottom:none;">
+        {% if item.beta['cover_image'] %}
+          {% if media_kind(item.beta['cover_image']) == 'video' %}
+          <video src="{{ item.beta['cover_image'] }}" autoplay muted loop playsinline preload="metadata"></video>
+          {% else %}
+          <img src="{{ item.beta['cover_image'] }}" alt="{{ item.beta['title'] }}" loading="lazy">
+          {% endif %}
+        {% else %}<div class="beta-cover-ph">🕹️</div>{% endif %}
+      </div>
+      <div style="padding:.8rem 1rem;">
+        <div class="beta-title">{{ item.beta['title'] }}</div>
+        <div class="pill-row" style="margin-top:.4rem;">
+          <span class="badge badge-bronze">{{ item.beta['version'] }}</span>
+          <span class="badge">{{ item.beta['genre'] }}</span>
+          {% for pl in item.beta['platforms'][:4] %}<span class="badge">{{ pl }}</span>{% endfor %}
+        </div>
+      </div>
+    </a>
+  {% endif %}
+
+  {% if item.media %}
+  <div class="post-media n{{ item.media|length if item.media|length <= 3 else (3 if item.media|length == 5 else 2) }}">
+    {% for m in item.media %}
+      {% if m.kind == 'video' %}
+      <video src="{{ m.url }}" controls preload="metadata"></video>
+      {% elif m.url.endswith('.gif') or media_kind(m.url) == 'image' %}
+      <img src="{{ m.url }}" alt="" loading="lazy" onclick="openLightbox(this.src)">
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="post-actions">
+    <button class="act-btn like-btn {% if item.liked %}on{% endif %}" onclick="toggleLike(this,'{{ item.post['id'] }}')">
+      <span class="ic">{% if item.liked %}♥{% else %}♡{% endif %}</span> <span class="cnt">{{ item.likes }}</span>
+    </button>
+    <button class="act-btn" onclick="focusComments('{{ item.post['id'] }}')">💬 <span class="cnt">{{ item.ncom }}</span></button>
+    {% if item.beta %}
+    <a class="act-btn" href="{{ url_for('descargar', beta_id=item.beta['id']) }}" target="_blank" rel="noopener">⬇️ Descargar ({{ item.beta['downloads'] }})</a>
+    {% endif %}
+  </div>
+  <div class="comments-zone" id="cz-{{ item.post['id'] }}" style="display:none;"></div>
+</article>

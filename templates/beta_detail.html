@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ b['title'] }} — DevPlay{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:1.25rem;align-items:start;" id="detailWrap">
+  <div style="display:flex;flex-direction:column;gap:1.25rem;min-width:0;">
+    <div class="detail-cover">
+      {% if b['cover_image'] %}
+        {% if media_kind(b['cover_image']) == 'video' %}
+        <video src="{{ b['cover_image'] }}" autoplay muted loop playsinline controls preload="metadata"></video>
+        {% else %}
+        <img src="{{ b['cover_image'] }}" alt="{{ b['title'] }}" onclick="openLightbox(this.src)">
+        {% endif %}
+      {% else %}<div class="beta-cover-ph" style="height:280px;">🕹️</div>{% endif %}
+    </div>
+
+    <div class="glass-card card-pad">
+      <div class="pill-row" style="margin-bottom:.5rem;">
+        <span class="badge badge-wine">{{ STATUSES.get(b['beta_status'], b['beta_status']) }}</span>
+        <span class="badge badge-bronze">{{ b['version'] }}</span>
+        <span class="badge">{{ b['genre'] }}</span>
+        {% for t in b['tags'] %}<span class="badge">#{{ t }}</span>{% endfor %}
+      </div>
+      <h1 class="text-section">{{ b['title'] }}</h1>
+      <p class="text-meta" style="margin:.2rem 0 .9rem;">publicada {{ b['created_at']|timeago }} · ⬇️ {{ b['downloads'] }} descargas</p>
+      <p style="white-space:pre-wrap;">{{ b['description'] }}</p>
+    </div>
+
+    {% if b['screenshots'] %}
+    <div class="glass-card card-pad">
+      <div class="label-caps" style="margin-bottom:.7rem;">📸 capturas y multimedia</div>
+      <div class="gallery">
+        {% for s in b['screenshots'] %}
+          {% if media_kind(s) == 'video' %}
+          <video src="{{ s }}" controls preload="metadata"></video>
+          {% else %}
+          <img src="{{ s }}" alt="" loading="lazy" onclick="openLightbox(this.src)">
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if b['requirements'] or b['install_instructions'] or b['changelog'] %}
+    <div class="glass-card card-pad">
+      <div class="label-caps" style="margin-bottom:.7rem;">📋 ficha técnica</div>
+      <dl class="kv">
+        {% if b['requirements'] %}<dt>Requisitos</dt><dd>{{ b['requirements'] }}</dd>{% endif %}
+        {% if b['install_instructions'] %}<dt>Instalación</dt><dd>{{ b['install_instructions'] }}</dd>{% endif %}
+        {% if b['changelog'] %}<dt>Notas v{{ b['version'] }}</dt><dd>{{ b['changelog'] }}</dd>{% endif %}
+        <dt>Plataformas</dt><dd>{{ b['platforms']|join(' · ') }}</dd>
+        {% if b['external_platform'] %}<dt>Enlace</dt><dd>{{ b['external_platform'] }}</dd>{% endif %}
+      </dl>
+    </div>
+    {% endif %}
+
+    <div class="glass-card card-pad">
+      <div class="label-caps" style="margin-bottom:.7rem;">💬 comentarios ({{ comments|length }})</div>
+      {% for c in comments %}
+      <div class="comment-item">
+        <a href="{{ url_for('perfil', username=c['username']) }}"><img class="avatar av-sm" src="{{ c['avatar'] }}" loading="lazy"></a>
+        <div class="comment-bubble">
+          <a href="{{ url_for('perfil', username=c['username']) }}"><b style="font-size:.78rem;">@{{ c['username'] }}</b></a>
+          <span class="text-tiny"> · {{ c['created_at']|timeago }}</span>
+          <div>{{ c['content'] }}</div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="comment-box">
+        <input class="input" id="commentInput" placeholder="Escribe tu feedback pa' el dev..." maxlength="1000">
+        <button class="btn btn-primary btn-sm btn-press" onclick="sendComment('{{ b['post_id'] }}')">Enviar</button>
+      </div>
+      <div id="commentList" style="margin-top:.5rem;"></div>
+    </div>
+  </div>
+
+  <aside style="display:flex;flex-direction:column;gap:1.25rem;position:sticky;top:4.8rem;">
+    <div class="glass-card card-pad" style="text-align:center;">
+      {% if b['download_type'] == 'DIRECT' %}
+      <a class="btn btn-primary btn-press" style="width:100%;" href="{{ url_for('descargar', beta_id=b['id']) }}">⬇️ Descargar beta</a>
+      <p class="text-tiny" style="margin-top:.5rem;">{{ b['file_name'] }}{% if b['file_size'] %} · {{ (b['file_size'] / 1048576) | round(1) }}MB{% endif %}</p>
+      {% elif b['external_url'] %}
+      <a class="btn btn-primary btn-press" style="width:100%;" href="{{ url_for('descargar', beta_id=b['id']) }}" target="_blank" rel="noopener">↗️ Descargar en {{ b['external_platform'] or 'enlace externo' }}</a>
+      <p class="text-tiny" style="margin-top:.5rem;word-break:break-all;">{{ b['external_url'] }}</p>
+      {% else %}
+      <div class="btn btn-ghost" style="width:100%;cursor:default;">⏳ Próximamente</div>
+      <p class="text-tiny" style="margin-top:.5rem;">El dev aún no sube el archivo</p>
+      {% endif %}
+      <div class="rule-ornate" style="margin:1rem 0;">✦</div>
+      <div style="display:flex;gap:.7rem;align-items:center;text-align:left;">
+        <a href="{{ url_for('perfil', username=b['username']) }}"><img class="avatar av-lg" src="{{ b['avatar'] }}" style="width:3.2rem;height:3.2rem;"></a>
+        <div style="flex:1;min-width:0;">
+          <a href="{{ url_for('perfil', username=b['username']) }}"><b style="font-size:.9rem;">@{{ b['username'] }}</b></a>
+          <div class="text-tiny">{{ b['full_name'] }}</div>
+          <div class="text-tiny">{{ b['profession'] or 'dev indie' }}</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-press" style="width:100%;margin-top:.8rem;" id="followBtn"
+              onclick="toggleFollow(this,'{{ b['username'] }}')" data-following="0">＋ Seguir</button>
+    </div>
+    <div class="glass-card card-pad">
+      <div class="label-caps" style="margin-bottom:.7rem;">🔥 también de moda</div>
+      <div style="display:flex;flex-direction:column;gap:.6rem;">
+        {% for m in more %}
+        <a href="{{ url_for('beta_detail', beta_id=m['id']) }}" style="display:flex;gap:.6rem;align-items:center;">
+          {% if m['cover_image'] and media_kind(m['cover_image']) == 'image' %}
+          <img src="{{ m['cover_image'] }}" style="width:2.4rem;height:2.4rem;object-fit:cover;border-radius:.4rem;border:1px solid var(--border);" loading="lazy">
+          {% else %}<span style="width:2.4rem;height:2.4rem;border-radius:.4rem;background:var(--secondary);display:grid;place-items:center;">🕹️</span>{% endif %}
+          <span style="flex:1;min-width:0;"><b style="font-size:.78rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m['title'] }}</b><span class="text-tiny">{{ m['genre'] }}</span></span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  // Estado del botón seguir (se completa vía API al hacer clic)
+</script>
+{% endblock %}

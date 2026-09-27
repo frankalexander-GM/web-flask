@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}La Plaza — DevPlay{% endblock %}
+{% block content %}
+<div class="glass-card card-pad">
+  <div class="label-caps">chat público de la comunidad</div>
+  <h1 class="text-section" style="margin:.2rem 0 .2rem;">La Plaza 🏪</h1>
+  <p class="text-meta">Todo el mundo de DevPlay en una sola tienda. Sé amable, aquí somos familia jaja 💛</p>
+</div>
+<div class="glass-card" style="display:flex;flex-direction:column;overflow:hidden;">
+  <div class="chat-scroll custom-scroll" id="chatScroll"></div>
+  <div class="chat-input">
+    <input class="input" id="chatInput" placeholder="Escribe en la plaza..." maxlength="500">
+    <button class="btn btn-primary btn-sm btn-press" onclick="sendChat()">➤</button>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const ME = "{{ cur_user['id'] }}";
+let lastAfter = null;
+async function loadChat() {
+  const url = lastAfter ? `/api/chat?after=${encodeURIComponent(lastAfter)}` : '/api/chat';
+  const r = await fetch(url);
+  const d = await r.json();
+  if (!r.ok) return;
+  const box = document.getElementById('chatScroll');
+  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 140;
+  if (d.messages.length) {
+    box.insertAdjacentHTML('beforeend', d.messages.map(m => `
+      <div class="msg-row ${m.user_id === ME ? 'me' : ''}">
+        ${m.user_id === ME ? '' : `<b class="text-tiny" style="align-self:flex-end;">@${m.username}</b>`}
+        <div class="msg-bubble">${escapeHtml(m.content)}<div class="text-tiny" style="margin-top:2px;">${m.created_at.slice(11,16)}</div></div>
+      </div>`).join(''));
+    if (d.messages.length) lastAfter = d.messages[d.messages.length-1].created_at;
+    if (nearBottom) box.scrollTop = box.scrollHeight;
+  } else if (!box.children.length) {
+    box.innerHTML = '<div class="empty"><div class="big">🏪</div><b>La plaza está quieta</b><p class="text-meta">Rompe el hielo, di hola jaja 👋</p></div>';
+  }
+}
+async function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const content = inp.value.trim();
+  if (!content) return;
+  inp.value = '';
+  const r = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({content})});
+  if (!r.ok) toast((await r.json()).error, 'error');
+}
+document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+loadChat();
+setInterval(loadChat, 3000);
+</script>
+{% endblock %}

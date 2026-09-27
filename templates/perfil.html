@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}@{{ user['username'] }} — DevPlay{% endblock %}
+{% block content %}
+<div class="banner-gradient" {% if user['banner'] %}style="background-image:url('{{ user['banner'] }}')"{% endif %}></div>
+<div class="glass-card card-pad" style="padding-bottom:1rem;">
+  <div class="profile-head" style="margin-top:-3.4rem;">
+    <img class="avatar av-xl" src="{{ user['avatar'] }}" alt="{{ user['username'] }}" style="border:3px solid var(--card);">
+    <div style="flex:1;min-width:0;padding-top:2.4rem;">
+      <h1 class="text-section" style="line-height:1.2;">{{ user['full_name'] or user['username'] }}</h1>
+      <div class="text-meta">@{{ user['username'] }}{% if user['profession'] %} · {{ user['profession'] }}{% endif %}{% if user['location'] %} · 📍 {{ user['location'] }}{% endif %}</div>
+    </div>
+    {% if user['id'] != cur_user['id'] %}
+    <div style="display:flex;gap:.5rem;flex-direction:column;align-items:flex-end;">
+      <button class="btn {% if following %}btn-ghost{% else %}btn-primary{% endif %} btn-press" id="followBtn"
+              onclick="toggleFollow(this,'{{ user['username'] }}')" data-following="{{ 1 if following else 0 }}">
+        {{ 'Siguiendo ✓' if following else '＋ Seguir' }}
+      </button>
+      <a class="btn btn-ghost btn-sm btn-press" href="{{ url_for('dm_view', username=user['username']) }}">✉️ Mensaje</a>
+    </div>
+    {% endif %}
+  </div>
+  {% if user['bio'] %}<p style="margin-top:1rem;white-space:pre-wrap;">{{ user['bio'] }}</p>{% endif %}
+  <div class="stat-row" style="margin-top:1rem;">
+    <div class="stat"><b>{{ stats['posts'] }}</b><span>posts</span></div>
+    <div class="stat"><b>{{ stats['betas'] }}</b><span>betas</span></div>
+    <div class="stat"><b>{{ stats['followers'] }}</b><span>seguidores</span></div>
+    <div class="stat"><b>{{ stats['following'] }}</b><span>siguiendo</span></div>
+    <div class="stat"><b>🪙 {{ user['devcoins'] }}</b><span>devcoins</span></div>
+  </div>
+</div>
+
+{% if betas %}
+<div class="glass-card card-pad">
+  <div class="label-caps" style="margin-bottom:.8rem;">🕹️ betas de {{ user['username'] }}</div>
+  <div class="beta-grid">
+    {% for b in betas %}
+    <a class="glass-card beta-card card-hover" href="{{ url_for('beta_detail', beta_id=b['id']) }}">
+      <div class="beta-cover-wrap">
+        {% if b['cover_image'] and media_kind(b['cover_image']) == 'image' %}
+        <img class="beta-cover" src="{{ b['cover_image'] }}" loading="lazy" style="border:none;">
+        {% elif b['cover_image'] %}<video src="{{ b['cover_image'] }}" autoplay muted loop playsinline></video>
+        {% else %}<div class="beta-cover-ph">🕹️</div>{% endif %}
+      </div>
+      <div class="beta-body">
+        <div class="beta-title">{{ b['title'] }}</div>
+        <div class="pill-row"><span class="badge badge-bronze">{{ b['version'] }}</span><span class="badge">{{ b['genre'] }}</span></div>
+        <div class="beta-foot"><span class="text-tiny">{{ b['created_at']|timeago }}</span><span class="text-tiny">⬇️ {{ b['downloads'] }}</span></div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div style="display:flex;flex-direction:column;gap:1.25rem;">
+  <div class="rule-ornate"><span class="label-caps">publicaciones</span></div>
+  {% for item in items %}{% include "_post.html" %}{% endfor %}
+  {% if not items and not betas %}
+  <div class="glass-card empty">
+    <div class="big">👻</div>
+    <b>Perfil en construcción</b>
+    <p class="text-meta">Cuando {{ user['username'] }} publique algo, aparecerá aquí jaja</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

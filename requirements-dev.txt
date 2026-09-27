@@ -1,0 +1,3 @@
+# Dependencias para desarrollo y pruebas de software
+-r requirements.txt
+pytest>=8.0

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}DevPlay — Red social para devs de videojuegos indie{% endblock %}
+{% block content %}
+<div class="glass-card frame-double card-pad" style="text-align:center;padding:1.6rem;">
+  <div class="label-caps">edición de hoy · la gaceta indie</div>
+  <h1 class="text-page" style="margin:.3rem 0 .2rem;">¡Hola, {{ cur_user['full_name'] or cur_user['username'] }}! 👋</h1>
+  <p class="text-meta">Las betas y la gente de DevPlay, impresas en papel crema tibio ☕</p>
+</div>
+
+{# Composer #}
+<div class="glass-card composer-box">
+  <div class="composer-row">
+    <img class="avatar av-md" src="{{ cur_user['avatar'] }}" alt="">
+    <textarea id="postText" placeholder="¿Qué estás haciendo hoy, dev? ¿Una beta nueva, un bug cruel, un logro jaja? ✍️" maxlength="1000"></textarea>
+  </div>
+  <div class="media-strip" id="postMedia"></div>
+  <div class="composer-foot">
+    <div style="display:flex;gap:.4rem;align-items:center;">
+      <input type="file" id="postFile" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mov" multiple hidden
+             onchange="uploadPostMedia(this.files)">
+      <button class="btn btn-ghost btn-sm btn-press" onclick="document.getElementById('postFile').click()">🖼️ Foto / GIF / Video</button>
+      <span class="text-tiny" id="postMediaCount">0/5</span>
+    </div>
+    <button class="btn btn-primary btn-sm btn-press" onclick="createPost()">Publicar ✍️</button>
+  </div>
+</div>
+
+{# Feed #}
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:1.25rem;align-items:start;" id="feedWrap">
+  <div style="display:flex;flex-direction:column;gap:1.25rem;min-width:0;">
+    {% for item in items %}{% include "_post.html" %}{% endfor %}
+    {% if not items %}
+    <div class="glass-card empty">
+      <div class="big">📰</div>
+      <b>Aún no hay nada publicado</b>
+      <p class="text-meta">Sé la primera persona en escribir en la gaceta jaja ✍️</p>
+    </div>
+    {% endif %}
+  </div>
+  <aside style="display:flex;flex-direction:column;gap:1.25rem;position:sticky;top:4.8rem;">
+    <div class="glass-card card-pad">
+      <div class="label-caps" style="margin-bottom:.7rem;">🔥 betas más descargadas</div>
+      <div style="display:flex;flex-direction:column;gap:.7rem;">
+        {% for b in top_betas %}
+        <a href="{{ url_for('beta_detail', beta_id=b['id']) }}" style="display:flex;gap:.6rem;align-items:center;">
+          {% if b['cover_image'] and media_kind(b['cover_image']) == 'image' %}
+          <img src="{{ b['cover_image'] }}" style="width:2.6rem;height:2.6rem;object-fit:cover;border-radius:.4rem;border:1px solid var(--border);" loading="lazy">
+          {% else %}<span style="width:2.6rem;height:2.6rem;border-radius:.4rem;background:var(--secondary);display:grid;place-items:center;">🕹️</span>{% endif %}
+          <span style="flex:1;min-width:0;">
+            <b style="font-size:.8rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ b['title'] }}</b>
+            <span class="text-tiny">⬇️ {{ b['downloads'] }} · {{ b['genre'] }}</span>
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="glass-card card-pad">
+      <div class="label-caps" style="margin-bottom:.7rem;">✨ devs pa' seguir</div>
+      <div style="display:flex;flex-direction:column;gap:.7rem;">
+        {% for u in suggestions %}
+        <div style="display:flex;gap:.6rem;align-items:center;">
+          <a href="{{ url_for('perfil', username=u['username']) }}"><img class="avatar av-sm" src="{{ u['avatar'] }}" loading="lazy"></a>
+          <span style="flex:1;min-width:0;">
+            <a href="{{ url_for('perfil', username=u['username']) }}"><b style="font-size:.8rem;display:block;">@{{ u['username'] }}</b></a>
+            <span class="text-tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">{{ u['profession'] or 'dev indie' }}</span>
+          </span>
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('perfil', username=u['username']) }}">Ver</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="glass-card card-pad" style="text-align:center;">
+      <div class="stamp-rubber" style="display:inline-block;padding:.5rem 1rem;font-weight:800;font-size:.8rem;">TIENDA MUY PRONTO</div>
+      <p class="text-tiny" style="margin-top:.6rem;">Gasta tus DevCoins en power-ups y cosmetics 🪙</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}

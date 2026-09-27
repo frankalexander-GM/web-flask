@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es" class="">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}DevPlay — Red social para devs de videojuegos indie{% endblock %}</title>
+  <meta name="description" content="DevPlay: publica betas, consigue testers y conecta con devs indie de Latinoamérica.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Bitter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/devplay.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2338291e'/><text y='68' x='50' text-anchor='middle' font-size='52' font-family='Georgia' font-weight='bold' fill='%23f5efe2'>D</text></svg>">
+  <script>
+    // Tema antes de pintar (sin flash)
+    if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+  </script>
+</head>
+<body class="paper-dots">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/" style="display:flex;align-items:center;gap:.6rem;">
+        <span class="logo-badge">D</span>
+        <span>
+          <span style="font-family:var(--font-display),serif;font-weight:900;font-size:1.15rem;letter-spacing:-.01em;">DevPlay</span>
+          <span class="text-tiny" style="display:block;margin-top:-3px;">gaceta indie · 70s</span>
+        </span>
+      </a>
+      <form class="topbar-search" action="{{ url_for('betas') }}">
+        <input class="input" type="search" name="q" placeholder="Buscar betas... 🎮" value="{{ request.args.get('q','') }}">
+      </form>
+      <div style="flex:1"></div>
+      <button class="theme-btn" id="themeBtn" title="Cambiar tema" onclick="toggleTheme()">🌙</button>
+      {% if cur_user %}
+      <a class="btn btn-primary btn-sm btn-press" href="{{ url_for('publicar') }}">＋ Publicar beta</a>
+      <div style="position:relative;">
+        <button class="user-chip" onclick="toggleMenu(event)">
+          <img class="avatar av-sm" src="{{ cur_user['avatar'] }}" alt="">
+          <span>{{ cur_user['username'] }}</span>
+        </button>
+        <div class="menu-pop" id="userMenu">
+          <a href="{{ url_for('perfil', username=cur_user['username']) }}">👤 Mi perfil</a>
+          <a href="{{ url_for('mensajes') }}">✉️ Mensajes {% if unread_dms %}<span class="unread-dot">{{ unread_dms }}</span>{% endif %}</a>
+          <a href="{{ url_for('plaza') }}">🏪 Plaza</a>
+          <div class="nav-sep" style="height:1px;background:var(--border);margin:.3rem .2rem;"></div>
+          <a href="{{ url_for('salir') }}">🚪 Cerrar sesión</a>
+        </div>
+      </div>
+      {% else %}
+      <a class="btn btn-ghost btn-sm btn-press" href="{{ url_for('login') }}">Entrar</a>
+      <a class="btn btn-primary btn-sm btn-press" href="{{ url_for('registro') }}">Crear cuenta</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div style="max-width:1280px;margin:0.9rem auto -0.4rem;padding:0 1.25rem;" class="flash-stack">
+      {% for cat, m in messages %}
+      <div class="alert {% if cat == 'success' %}alert-success{% endif %}">{{ m }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="shell">
+    {% if cur_user %}
+    <nav class="sidenav">
+      <a href="{{ url_for('feed') }}" class="{% if request.path == '/' %}active{% endif %}">🏠 Inicio</a>
+      <a href="{{ url_for('betas') }}" class="{% if request.path.startswith('/beta') and 'publicar' not in request.path %}active{% endif %}">🕹️ Betas</a>
+      <a href="{{ url_for('plaza') }}" class="{% if request.path.startswith('/plaza') %}active{% endif %}">🏪 Plaza</a>
+      <a href="{{ url_for('mensajes') }}" class="{% if request.path.startswith('/dm') or request.path.startswith('/mensajes') %}active{% endif %}">✉️ Mensajes{% if unread_dms %} <span class="unread-dot">{{ unread_dms }}</span>{% endif %}</a>
+      <a href="{{ url_for('perfil', username=cur_user['username']) }}" class="{% if request.path.startswith('/u/') %}active{% endif %}">👤 Mi perfil</a>
+      <div class="nav-sep"></div>
+      <a href="{{ url_for('publicar') }}" class="{% if request.path == '/publicar' %}active{% endif %}">🚀 Publicar beta</a>
+      <div class="nav-sep"></div>
+      <div class="nav-coins">🪙 <span>{{ cur_user['devcoins'] }}</span> <span class="text-tiny">DevCoins</span></div>
+    </nav>
+    <main class="main-col">{% block content %}{% endblock %}</main>
+    {% else %}
+    <main style="grid-column:1/-1;" class="main-col">{% block content_public %}{% endblock %}</main>
+    {% endif %}
+  </div>
+
+  {# ── Pixel, el asistente de la fábrica ── #}
+  {% if cur_user %}
+  <button class="pixel-fab" id="pixelFab" onclick="togglePixel()" title="Pixel, asistente de DevPlay">🤖</button>
+  <div class="pixel-panel" id="pixelPanel">
+    <div class="pixel-head">
+      <span style="font-size:1.4rem;">🤖</span>
+      <div style="flex:1;">
+        <b style="font-family:var(--font-display),serif;">Pixel</b>
+        <div class="text-tiny">asistente de la fábrica · en línea</div>
+      </div>
+      <button class="act-btn" onclick="togglePixel()">✕</button>
+    </div>
+    <div class="pixel-scroll custom-scroll" id="pixelScroll">
+      <div class="pixel-msg bot">¡Hola {{ cur_user['username'] }}! 👋 Soy Pixel, el robot de DevPlay 🤖✨ Pregúntame cómo publicar una beta, cómo descargar juegos o lo que sea del foro jaja</div>
+    </div>
+    <div class="pixel-foot">
+      <input class="input" id="pixelInput" placeholder="Escríbele a Pixel..." maxlength="500">
+      <button class="btn btn-primary btn-sm btn-press" onclick="sendPixel()">➤</button>
+    </div>
+  </div>
+  {% endif %}
+
+  <div id="toasts"></div>
+  <div id="lightbox" onclick="closeLightbox(event)"><button class="lb-x">✕</button><div id="lbContent"></div></div>
+
+  <script src="{{ url_for('static', filename='js/devplay.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Mensajes — DevPlay{% endblock %}
+{% block content %}
+<div class="glass-card card-pad">
+  <div class="label-caps">cartas entre devs</div>
+  <h1 class="text-section" style="margin:.2rem 0;">Mensajes ✉️</h1>
+</div>
+{% if convos %}
+<div class="glass-card convo-list">
+  {% for c in convos %}
+  <a class="convo" href="{{ url_for('dm_view', username=c['username']) }}">
+    <img class="avatar av-md" src="{{ c['avatar'] }}" loading="lazy">
+    <span style="flex:1;min-width:0;">
+      <b style="font-size:.9rem;">{{ c['full_name'] or c['username'] }}</b>
+      <span class="text-tiny" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c['content'][:70] }}</span>
+    </span>
+    {% if c['unread'] %}<span class="unread-dot">{{ c['unread'] }}</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="glass-card empty">
+  <div class="big">✉️</div>
+  <b>Sin conversaciones aún</b>
+  <p class="text-meta">Visita la <a href="{{ url_for('feed') }}" style="color:var(--primary);font-weight:700;">gaceta</a>, toca un perfil y manda el primer saludo jaja</p>
+</div>
+{% endif %}
+{% endblock %}

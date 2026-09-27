@@ -1,0 +1,20 @@
+# Base de datos (se crea sola la primera vez)
+devplay.db
+devplay.db-wal
+devplay.db-shm
+
+# Archivos subidos por usuarios
+uploads/
+download/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Entorno
+.env
+.DS_Store

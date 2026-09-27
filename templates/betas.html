@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Betas — DevPlay{% endblock %}
+{% block content %}
+<div class="glass-card card-pad">
+  <div class="label-caps">sección de juegos</div>
+  <h1 class="text-section" style="margin:.2rem 0 .8rem;">Betas de la comunidad 🕹️</h1>
+  <form class="filter-bar" method="get">
+    <input class="input" style="min-width:220px;" type="search" name="q" value="{{ search }}" placeholder="Buscar por título o descripción...">
+    <select class="input" name="genero" onchange="this.form.submit()">
+      <option value="">Todos los géneros</option>
+      {% for g in GENRES %}<option value="{{ g }}" {% if genre == g %}selected{% endif %}>{{ g }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-primary btn-sm btn-press">Buscar 🔍</button>
+    <div style="flex:1"></div>
+    <a class="btn btn-primary btn-sm btn-press" href="{{ url_for('publicar') }}">＋ Publicar la tuya</a>
+  </form>
+</div>
+
+<div class="beta-grid">
+  {% for b in betas %}
+  <a class="glass-card beta-card card-hover" href="{{ url_for('beta_detail', beta_id=b['id']) }}">
+    <div class="beta-cover-wrap">
+      {% if b['cover_image'] %}
+        {% if media_kind(b['cover_image']) == 'video' %}
+        <video src="{{ b['cover_image'] }}" autoplay muted loop playsinline preload="metadata"></video>
+        {% else %}
+        <img class="beta-cover" src="{{ b['cover_image'] }}" alt="{{ b['title'] }}" loading="lazy" style="border:none;">
+        {% endif %}
+        {% if media_kind(b['cover_image']) == 'video' %}<span class="mbadge">▶ video</span>{% endif %}
+      {% else %}
+      <div class="beta-cover-ph">🕹️</div>
+      {% endif %}
+    </div>
+    <div class="beta-body">
+      <div class="beta-title">{{ b['title'] }}</div>
+      <div class="text-tiny">por @{{ b['username'] }} · {{ b['created_at']|timeago }}</div>
+      <div class="pill-row">
+        <span class="badge badge-wine">{{ STATUSES.get(b['beta_status'], b['beta_status']) }}</span>
+        <span class="badge badge-bronze">{{ b['version'] }}</span>
+        <span class="badge">{{ b['genre'] }}</span>
+      </div>
+      <div class="beta-foot">
+        <span class="text-tiny">👥 {{ b['platforms']|join(' · ') }}</span>
+        <span class="text-tiny"><b>⬇️ {{ b['downloads'] }}</b></span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% if not betas %}
+<div class="glass-card empty">
+  <div class="big">🕹️</div>
+  <b>Ninguna beta coincide</b>
+  <p class="text-meta">Prueba con otro término o género, o ¡publica la tuya! jaja 🚀</p>
+</div>
+{% endif %}
+{% endblock %}

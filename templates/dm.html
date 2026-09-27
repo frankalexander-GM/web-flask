@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}DM con @{{ other['username'] }} — DevPlay{% endblock %}
+{% block content %}
+<div class="split">
+  <div class="glass-card card-pad">
+    <div class="label-caps" style="margin-bottom:.6rem;">conversaciones</div>
+    <div class="convo-list">
+      {% for c in convos %}
+      <a class="convo {% if c['username'] == other['username'] %}on{% endif %}" href="{{ url_for('dm_view', username=c['username']) }}">
+        <img class="avatar av-sm" src="{{ c['avatar'] }}" loading="lazy">
+        <b style="font-size:.85rem;">@{{ c['username'] }}</b>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="glass-card" style="display:flex;flex-direction:column;overflow:hidden;">
+    <div class="post-head" style="padding:.8rem 1rem;border-bottom:1px solid var(--border);margin:0;">
+      <a href="{{ url_for('perfil', username=other['username']) }}"><img class="avatar av-md" src="{{ other['avatar'] }}"></a>
+      <div class="who">
+        <a href="{{ url_for('perfil', username=other['username']) }}"><b>{{ other['full_name'] or other['username'] }}</b></a>
+        <div class="text-tiny">@{{ other['username'] }} · privado 🤫</div>
+      </div>
+    </div>
+    <div class="chat-scroll custom-scroll" id="chatScroll"></div>
+    <div class="chat-input">
+      <input class="input" id="dmInput" placeholder="Escribe tu mensaje..." maxlength="2000">
+      <button class="btn btn-primary btn-sm btn-press" onclick="sendDm()">➤</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const OTHER = "{{ other['username'] }}";
+const ME = "{{ cur_user['id'] }}";
+async function loadDm() {
+  const r = await fetch(`/api/dm/${OTHER}`);
+  const d = await r.json();
+  if (!r.ok) return;
+  const box = document.getElementById('chatScroll');
+  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
+  box.innerHTML = d.messages.map(m => `
+    <div class="msg-row ${m.sender_id === ME ? 'me' : ''}">
+      <div class="msg-bubble">${escapeHtml(m.content)}<div class="text-tiny" style="margin-top:2px;">${m.created_at.slice(11,16)}</div></div>
+    </div>`).join('') || '<div class="empty"><div class="big">👋</div><b>Di hola primero</b></div>';
+  if (nearBottom) box.scrollTop = box.scrollHeight;
+}
+async function sendDm() {
+  const inp = document.getElementById('dmInput');
+  const content = inp.value.trim();
+  if (!content) return;
+  inp.value = '';
+  const r = await fetch(`/api/dm/${OTHER}`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({content})});
+  if (r.ok) loadDm(); else toast((await r.json()).error, 'error');
+}
+document.getElementById('dmInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendDm(); });
+loadDm();
+setInterval(loadDm, 4000);
+</script>
+{% endblock %}

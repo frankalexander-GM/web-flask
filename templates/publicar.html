@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block title %}Publicar beta — DevPlay{% endblock %}
+{% block content %}
+<div class="glass-card frame-double card-pad" style="max-width:760px;margin:0 auto;">
+  <div class="label-caps">prensa de la fábrica</div>
+  <h1 class="text-section" style="margin:.2rem 0 .2rem;">Publicar beta 🚀</h1>
+  <p class="text-meta" style="margin-bottom:1rem;">La fábrica pide lo mínimo pa' que tu beta luzca y la comunidad confíe. Los campos con <span class="req">*</span> son obligatorios.</p>
+
+  <div class="wizard-steps">
+    <div class="wstep on" id="ws1">1 · Información</div>
+    <div class="wstep" id="ws2">2 · Multimedia</div>
+    <div class="wstep" id="ws3">3 · Descarga</div>
+  </div>
+
+  {% if errors %}
+    {% for e in errors %}<div class="alert">⚠️ {{ e }}</div>{% endfor %}
+  {% endif %}
+
+  <form method="post" id="betaForm">
+    <input type="hidden" name="cover" id="coverInput" value="{{ values.get('cover','') }}">
+    <input type="hidden" name="screenshots" id="shotsInput" value="">
+    <input type="hidden" name="file_name" id="fileNameInput" value="">
+    <input type="hidden" name="file_url" id="fileUrlInput" value="">
+    <input type="hidden" name="file_size" id="fileSizeInput" value="">
+
+    {# ═══ PASO 1: INFORMACIÓN ═══ #}
+    <div class="wizard-pane on" id="wp1">
+      <div class="field">
+        <label>Título <span class="req">*</span></label>
+        <input class="input" name="title" id="titleInput" maxlength="90" required value="{{ values.get('title','') }}" placeholder="Ej: Luciérnagas: metroidvania pixel art">
+        <span class="hint">Mínimo 3 letras · máx 90</span>
+      </div>
+      <div class="field">
+        <label>Descripción <span class="req">*</span> <span class="hint" style="float:right;"><span id="descCount">0</span> letras · mínimo 20</span></label>
+        <textarea class="input" name="description" id="descInput" maxlength="2000" rows="5" required placeholder="Cuenta qué es tu juego, qué esperas de los testers y en qué estado está...">{{ values.get('description','') }}</textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="field">
+          <label>Género <span class="req">*</span></label>
+          <select class="input" name="genre" id="genreInput">
+            <option value="">— Elige el género —</option>
+            {% for g in genres %}<option value="{{ g }}" {% if values.get('genre') == g %}selected{% endif %}>{{ g }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Versión <span class="req">*</span></label>
+          <input class="input" name="version" id="versionInput" value="{{ values.get('version','') }}" placeholder="Ej: v0.1, 1.0.2">
+          <span class="hint">Formato válido: v0.1, 1.0.2, v1.0.0-rc1</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Estado de la beta <span class="req">*</span></label>
+        <select class="input" name="beta_status">
+          {% for k, label in statuses.items() %}<option value="{{ k }}" {% if values.get('beta_status','open_beta') == k %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Plataformas <span class="req">*</span> <span class="hint">elige al menos una</span></label>
+        <div class="chk-grid" id="platGrid">
+          {% for p in platforms %}
+          <label class="chk-chip"><input type="checkbox" name="platforms" value="{{ p }}">{{ p }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="field">
+        <label>Tags <span class="hint">separados por coma, máx 10</span></label>
+        <input class="input" name="tags" value="{{ values.get('tags','') }}" placeholder="Ej: 2D, Pixel Art, Multiplayer">
+      </div>
+      <div class="wizard-nav">
+        <span></span>
+        <button type="button" class="btn btn-dark btn-press" onclick="wizardNext(1)">Siguiente →</button>
+      </div>
+    </div>
+
+    {# ═══ PASO 2: MULTIMEDIA ═══ #}
+    <div class="wizard-pane" id="wp2">
+      <div class="field">
+        <label>Portada <span class="req">*</span> <span class="hint">imagen o video · máx 8MB img / 25MB video</span></label>
+        <div class="dropzone" id="coverZone" onclick="document.getElementById('coverFile').click()">
+          🖼️ / 🎬 Toca pa' subir la portada (imagen o video)<br><span class="text-tiny">El video se reproduce solo, ¡portada viva jaja!</span>
+        </div>
+        <input type="file" id="coverFile" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mov" hidden onchange="uploadCover(this.files[0])">
+        <div class="media-strip" id="coverStrip" style="display:none;"></div>
+      </div>
+      <div class="field">
+        <label>Capturas, GIFs y videos <span class="hint">opcionales · máx 5 · <span id="shotsCount">0</span>/5</span></label>
+        <div class="dropzone" id="shotsZone" onclick="document.getElementById('shotsFile').click()">
+          📸 Toca pa' añadir capturas (hasta 5 entre imágenes, GIFs y videos)
+        </div>
+        <input type="file" id="shotsFile" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mov" multiple hidden onchange="uploadShots(this.files)">
+        <div class="media-strip" id="shotsStrip"></div>
+      </div>
+      <div class="wizard-nav">
+        <button type="button" class="btn btn-ghost btn-press" onclick="wizardGo(1)">← Atrás</button>
+        <button type="button" class="btn btn-dark btn-press" onclick="wizardNext(2)">Siguiente →</button>
+      </div>
+    </div>
+
+    {# ═══ PASO 3: DESCARGA ═══ #}
+    <div class="wizard-pane" id="wp3">
+      <div class="field">
+        <label>¿Cómo se descarga tu beta? <span class="req">*</span></label>
+        <div class="chk-grid">
+          <label class="chk-chip" id="dtDirect"><input type="radio" name="download_type" value="DIRECT" {% if values.get('download_type') == 'DIRECT' %}checked{% endif %}>📦 Archivo aquí (máx 50MB)</label>
+          <label class="chk-chip" id="dtLink"><input type="radio" name="download_type" value="LINK" {% if values.get('download_type') == 'LINK' %}checked{% endif %}>🔗 Enlace externo</label>
+        </div>
+      </div>
+      <div id="directPane" style="display:none;">
+        <div class="field">
+          <div class="dropzone" id="betaZone" onclick="document.getElementById('betaFile').click()">
+            📦 Toca pa' subir el archivo (ZIP, RAR, 7Z, TAR, GZ, EXE, APK · máx 50MB)
+          </div>
+          <input type="file" id="betaFile" accept=".zip,.rar,.7z,.tar,.gz,.exe,.apk" hidden onchange="uploadBetaFile(this.files[0])">
+          <div id="betaFileInfo" class="hint" style="margin-top:.4rem;"></div>
+        </div>
+      </div>
+      <div id="linkPane" style="display:none;">
+        <div class="field">
+          <label>Enlace externo</label>
+          <input class="input" name="external_url" value="{{ values.get('external_url','') }}" placeholder="https://tudemo.itch.io/...">
+          <div style="margin-top:.4rem;">
+            <select class="input" name="external_platform">
+              <option value="">— Plataforma —</option>
+              {% for p in ['itch.io','Google Drive','MediaFire','Mega','GitHub','Otro'] %}
+              <option value="{{ p }}" {% if values.get('external_platform') == p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Requisitos del sistema <span class="hint">opcional</span></label>
+        <textarea class="input" name="requirements" rows="2" placeholder="Ej: 2GB RAM · dual-core · 200MB de espacio">{{ values.get('requirements','') }}</textarea>
+      </div>
+      <div class="field">
+        <label>Instrucciones de instalación <span class="hint">opcional</span></label>
+        <textarea class="input" name="install_instructions" rows="2" placeholder="Ej: descomprime y ejecuta el juego">{{ values.get('install_instructions','') }}</textarea>
+      </div>
+      <div class="field">
+        <label>Notas de la versión <span class="hint">opcional</span></label>
+        <textarea class="input" name="changelog" rows="2" placeholder="Ej: nuevo nivel 3, arreglado el salto doble">{{ values.get('changelog','') }}</textarea>
+      </div>
+      <div class="wizard-nav">
+        <button type="button" class="btn btn-ghost btn-press" onclick="wizardGo(2)">← Atrás</button>
+        <button type="submit" class="btn btn-primary btn-press">🚀 Publicar beta</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// ═══ Wizard con las mismas reglas de la fábrica (client-side) ═══
+const VERSION_RE = /^v?\d+(\.\d+){0,3}([-a-z0-9]*)?$/i;
+let coverUrl = "{{ values.get('cover','') }}";
+let shots = [];   // urls de galería
+let betaFile = {name:'', url:'', size:0};
+
+function goPane(n) {
+  document.querySelectorAll('.wizard-pane').forEach((p,i)=>p.classList.toggle('on', i===n-1));
+  document.querySelectorAll('.wstep').forEach((s,i)=>{
+    s.classList.toggle('on', i===n-1);
+    s.classList.toggle('done', i < n-1);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function wizardGo(n){ goPane(n); }
+
+function wizardNext(from) {
+  if (from === 1) {
+    const title = document.getElementById('titleInput').value.trim();
+    const desc = document.getElementById('descInput').value.trim();
+    const genre = document.getElementById('genreInput').value;
+    const version = document.getElementById('versionInput').value.trim();
+    const plats = document.querySelectorAll('#platGrid input:checked');
+    if (title.length < 3) return toast('El título necesita al menos 3 letras', 'error');
+    if (desc.length < 20) return toast('La descripción necesita al menos 20 letras', 'error');
+    if (!genre) return toast('Elige el género del juego', 'error');
+    if (!version) return toast('La versión es obligatoria (ej: v0.1, 1.0.2)', 'error');
+    if (!VERSION_RE.test(version)) return toast('La versión necesita un formato válido (ej: v0.1, 1.0.2)', 'error');
+    if (plats.length < 1) return toast('Elige al menos una plataforma', 'error');
+    return goPane(2);
+  }
+  if (from === 2) {
+    if (!coverUrl) return toast('Sube una portada para tu beta (imagen o video) — es obligatoria', 'error');
+    return goPane(3);
+  }
+}
+
+// Chips seleccionables
+document.querySelectorAll('.chk-chip input').forEach(inp => {
+  inp.addEventListener('change', () => {
+    if (inp.type === 'radio') {
+      document.querySelectorAll('.chk-chip input[type=radio]').forEach(o => o.closest('.chk-chip').classList.remove('on'));
+    }
+    inp.closest('.chk-chip').classList.toggle('on', inp.checked);
+    if (inp.name === 'download_type') toggleDownloadPane();
+  });
+  if (inp.checked) inp.closest('.chk-chip').classList.add('on');
+});
+function toggleDownloadPane(){
+  const v = document.querySelector('input[name=download_type]:checked')?.value;
+  document.getElementById('directPane').style.display = v === 'DIRECT' ? 'block' : 'none';
+  document.getElementById('linkPane').style.display = v === 'LINK' ? 'block' : 'none';
+}
+
+// Contador descripción
+document.getElementById('descInput').addEventListener('input', e => {
+  document.getElementById('descCount').textContent = e.target.value.length;
+});
+
+// ═══ Uploads ═══
+async function up(file, kind) {
+  const fd = new FormData(); fd.append('file', file); fd.append('kind', kind);
+  const r = await fetch('/api/upload', {method:'POST', body: fd});
+  const d = await r.json();
+  if (!r.ok) { toast(d.error || 'No se pudo subir el archivo', 'error'); return null; }
+  return d;
+}
+function thumbHtml(url, kind, star) {
+  const isVid = kind === 'video';
+  const inner = isVid ? `<video src="${url}" autoplay muted loop playsinline></video>` : `<img src="${url}">`;
+  const badge = isVid ? '<span class="mbadge">▶ video</span>' : (url.endsWith('.gif') ? '<span class="mbadge">gif</span>' : '');
+  const starBtn = star ? `<button type="button" class="star ${star ? 'on':''}" title="Portada">★</button>` : '';
+  return inner + badge + starBtn;
+}
+async function uploadCover(f) {
+  if (!f) return;
+  const d = await up(f, 'media');
+  if (!d) return;
+  coverUrl = d.url;
+  document.getElementById('coverInput').value = d.url;
+  const strip = document.getElementById('coverStrip');
+  strip.style.display = 'flex';
+  strip.innerHTML = `<div class="media-thumb">${thumbHtml(d.url, d.mediaKind, false)}<button type="button" class="mx" onclick="clearCover()">✕</button></div>`;
+  document.getElementById('coverZone').style.display = 'none';
+  toast('Portada subida ✨', 'success');
+}
+function clearCover(){
+  coverUrl = ''; document.getElementById('coverInput').value = '';
+  document.getElementById('coverStrip').style.display = 'none';
+  document.getElementById('coverZone').style.display = 'block';
+}
+async function uploadShots(files) {
+  for (const f of files) {
+    if (shots.length >= 5) { toast('Máximo 5 capturas para la galería', 'warning'); break; }
+    const d = await up(f, 'media');
+    if (d) shots.push(d.url);
+  }
+  renderShots();
+  document.getElementById('shotsFile').value = '';
+}
+function renderShots(){
+  const strip = document.getElementById('shotsStrip');
+  strip.innerHTML = shots.map((u,i)=>`<div class="media-thumb">${thumbHtml(u, u.match(/\.(mp4|webm|mov)(\?|#|$)/i) ? 'video' : 'image', true)}
+    <button type="button" class="mx" onclick="delShot(${i})">✕</button></div>`).join('');
+  document.getElementById('shotsCount').textContent = shots.length;
+  document.getElementById('shotsInput').value = shots.join('|');
+  document.getElementById('shotsZone').style.opacity = shots.length >= 5 ? .5 : 1;
+}
+function delShot(i){ shots.splice(i,1); renderShots(); }
+async function uploadBetaFile(f) {
+  if (!f) return;
+  const d = await up(f, 'beta');
+  if (!d) return;
+  betaFile = {name: d.name, url: d.url, size: d.size};
+  document.getElementById('fileNameInput').value = d.name;
+  document.getElementById('fileUrlInput').value = d.url;
+  document.getElementById('fileSizeInput').value = d.size;
+  document.getElementById('betaFileInfo').innerHTML = `📦 <b>${f.name}</b> · ${(d.size/1048576).toFixed(1)}MB listo`;
+}
+
+// Validación final antes de enviar (server re-valida igual)
+document.getElementById('betaForm').addEventListener('submit', e => {
+  const cover = document.getElementById('coverInput').value;
+  if (document.getElementById('titleInput').value.trim().length < 3) { e.preventDefault(); return wizardGo(1), toast('El título necesita al menos 3 letras','error'); }
+  if (document.getElementById('descInput').value.trim().length < 20) { e.preventDefault(); return wizardGo(1), toast('La descripción necesita al menos 20 letras','error'); }
+  if (!document.getElementById('genreInput').value) { e.preventDefault(); return wizardGo(1), toast('Elige el género del juego','error'); }
+  if (!VERSION_RE.test(document.getElementById('versionInput').value.trim())) { e.preventDefault(); return wizardGo(1), toast('La versión necesita un formato válido (ej: v0.1, 1.0.2)','error'); }
+  if (document.querySelectorAll('#platGrid input:checked').length < 1) { e.preventDefault(); return wizardGo(1), toast('Elige al menos una plataforma','error'); }
+  if (!cover) { e.preventDefault(); return wizardGo(2), toast('Sube una portada para tu beta (imagen o video) — es obligatoria','error'); }
+  if (shots.length > 5) { e.preventDefault(); return wizardGo(2), toast('Máximo 5 capturas para la galería','error'); }
+  const dt = document.querySelector('input[name=download_type]:checked');
+  if (!dt) { e.preventDefault(); return wizardGo(3), toast('Elige cómo se descarga tu beta: archivo o enlace externo','error'); }
+  if (dt.value === 'DIRECT' && !betaFile.url) { e.preventDefault(); return wizardGo(3), toast('Sube el archivo de tu beta (ZIP, RAR, EXE, APK... máx 50MB)','error'); }
+  if (dt.value === 'LINK') {
+    const url = document.querySelector('input[name=external_url]').value.trim();
+    if (!/^https?:\/\/[^\s]+\.[^\s]+/.test(url)) { e.preventDefault(); return wizardGo(3), toast('Pega un enlace externo válido (https://...)','error'); }
+  }
+});
+</script>
+{% endblock %}
