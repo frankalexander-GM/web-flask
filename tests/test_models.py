@@ -4,7 +4,7 @@ import sqlite3
 import pytest
 
 import models
-from models import execute, get_db, new_id, now_iso, q
+from models import execute, new_id, now_iso, q
 
 
 class TestHelpers:

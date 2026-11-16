@@ -9,7 +9,6 @@ import json
 import os
 import re
 import secrets
-import unicodedata
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -18,7 +17,7 @@ from flask import (Flask, abort, flash, g, jsonify, redirect, render_template,
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import pixel
-from models import DB_PATH, execute, get_db, new_id, now_iso, q
+from models import DB_PATH, execute, new_id, now_iso, q
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")

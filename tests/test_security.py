@@ -5,7 +5,7 @@ cookies de sesión seguras, bloqueo de javascript:/data: y path-traversal.
 """
 import models
 from app import SAFE_NAME_RE, is_valid_media_url
-from conftest import crear_usuario, login
+from conftest import crear_usuario
 
 
 class TestInyeccionSQL:
